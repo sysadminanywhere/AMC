@@ -1,0 +1,11 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="AMC Train" type="Application" factoryName="Application">
+    <option name="MAIN_CLASS_NAME" value="dev.amc.training.Train" />
+    <module name="amc-training" />
+    <option name="PROGRAM_PARAMETERS" value="--epochs=600 --save=results/amc.bin" />
+    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>

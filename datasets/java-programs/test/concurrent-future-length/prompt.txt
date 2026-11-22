@@ -1,0 +1,1 @@
+Write the complete public class Solution with a static length method returning a CompletableFuture containing the length of the input String.

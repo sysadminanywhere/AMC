@@ -1,0 +1,1 @@
+Write a complete public class Solution with a nested public interface Rule whose accept method tests an integer. Provide a static positive method that returns a Rule accepting positive integers.

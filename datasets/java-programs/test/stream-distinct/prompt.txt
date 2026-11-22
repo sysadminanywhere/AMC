@@ -1,0 +1,1 @@
+Write the complete public class Solution containing a static distinct method that returns distinct strings in encounter order using streams.

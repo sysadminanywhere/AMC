@@ -1,0 +1,1 @@
+Write the complete public class Solution containing a static parse method with a String and a long fallback. Parse a long and return the fallback if parsing fails.

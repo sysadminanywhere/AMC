@@ -1,0 +1,1 @@
+Write a complete public class Solution with a static read method that accepts a Path and returns its text. Propagate IOException.

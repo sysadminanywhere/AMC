@@ -1,0 +1,1 @@
+Write a complete public class Solution with a static positive method that takes List<Integer> and returns positive values using streams.

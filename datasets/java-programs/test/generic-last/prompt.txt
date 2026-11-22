@@ -1,0 +1,1 @@
+Write the complete public class Solution containing a generic static last method that returns the final element of a nonempty List.

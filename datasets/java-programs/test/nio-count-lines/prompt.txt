@@ -1,0 +1,1 @@
+Write the complete public class Solution with a static countLines method that takes a Path, reads its lines, and returns their number. Propagate IOException.

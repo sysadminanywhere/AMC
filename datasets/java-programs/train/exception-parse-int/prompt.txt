@@ -1,0 +1,1 @@
+Write a complete public class Solution with a static parse method that takes text and a fallback integer. Return the parsed int or the fallback for invalid input.

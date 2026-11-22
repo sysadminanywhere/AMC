@@ -1,0 +1,1 @@
+Write the complete public class Solution for a wallet. The constructor accepts an initial int balance; deposit adds its int argument, and balance returns the current value.

@@ -1,0 +1,11 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="AMC Java Arrays Generate" type="Application" factoryName="Application">
+    <option name="MAIN_CLASS_NAME" value="dev.amc.training.GenerateJava" />
+    <module name="amc-training" />
+    <option name="PROGRAM_PARAMETERS" value="--arrays results/java-arrays.bin &quot;Count the elements greater than 0.&quot;" />
+    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>

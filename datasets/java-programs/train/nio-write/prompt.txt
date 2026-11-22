@@ -1,0 +1,1 @@
+Write a complete public class Solution with a static write method that accepts a Path and text and writes the text. Propagate IOException.

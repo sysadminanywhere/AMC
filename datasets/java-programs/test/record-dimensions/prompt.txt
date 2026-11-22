@@ -1,0 +1,1 @@
+Write the complete public class Solution with a nested public record Size for width and height and a static square factory that takes the side length.

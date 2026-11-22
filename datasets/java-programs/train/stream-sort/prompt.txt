@@ -1,0 +1,1 @@
+Write a complete public class Solution with a static sorted method that takes List<String> and returns a sorted list using streams.

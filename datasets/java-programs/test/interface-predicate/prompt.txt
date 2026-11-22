@@ -1,0 +1,1 @@
+Write the complete public class Solution with a public nested interface Rule accepting an int and a static negative method returning a Rule that accepts negative ints.

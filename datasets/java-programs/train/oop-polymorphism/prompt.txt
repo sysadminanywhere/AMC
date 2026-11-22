@@ -1,0 +1,1 @@
+Write a complete public class Solution with a nested abstract Animal class and a nested Dog subclass. Animal declares sound and Dog returns the literal woof.

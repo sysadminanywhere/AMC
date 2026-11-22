@@ -1,0 +1,1 @@
+Write a complete public class Solution with a nested generic record Pair for left and right values and a generic static pair factory.

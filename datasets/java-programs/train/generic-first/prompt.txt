@@ -1,0 +1,1 @@
+Write a complete public class Solution containing a generic static first method. It returns the first item of a nonempty List.

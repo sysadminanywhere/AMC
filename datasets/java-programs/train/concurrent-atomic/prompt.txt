@@ -1,0 +1,1 @@
+Write a complete public class Solution using AtomicInteger. The instance method next should atomically increase and return a counter initially zero.

@@ -1,6 +1,6 @@
 build/
 target/
 *.class
+results/*.bin
 .idea/
 *.iml
-results/*.bin

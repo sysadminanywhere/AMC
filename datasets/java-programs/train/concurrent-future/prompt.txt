@@ -1,0 +1,1 @@
+Write a complete public class Solution with a static doubled method returning a CompletableFuture with two times the supplied integer.

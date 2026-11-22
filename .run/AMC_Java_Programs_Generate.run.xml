@@ -1,0 +1,11 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="AMC Java Programs Generate" type="Application" factoryName="Application">
+    <option name="MAIN_CLASS_NAME" value="dev.amc.training.GenerateProgram" />
+    <module name="amc-training" />
+    <option name="PROGRAM_PARAMETERS" value="datasets/java-programs/train/generic-first/prompt.txt" />
+    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>

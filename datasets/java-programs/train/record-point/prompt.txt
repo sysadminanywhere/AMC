@@ -1,0 +1,1 @@
+Write a complete public class Solution with a nested public record Point for x and y and a static origin factory with both coordinates zero.

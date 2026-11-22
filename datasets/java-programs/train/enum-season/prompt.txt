@@ -1,0 +1,1 @@
+Write a complete public class Solution with a nested public enum Season with SPRING, SUMMER, AUTUMN, WINTER and a static cold method testing WINTER.

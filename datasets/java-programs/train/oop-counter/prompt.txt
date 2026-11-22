@@ -1,0 +1,1 @@
+Write a complete public class Solution that stores an integer count. The constructor accepts the starting count. increment adds one, and value returns the current count.
