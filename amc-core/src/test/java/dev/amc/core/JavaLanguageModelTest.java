@@ -13,6 +13,52 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class JavaLanguageModelTest {
     @Test
+    void overflowingPromptVocabularyKeepsWordsAndFrequentFeatures() {
+        var features = new java.util.LinkedHashMap<String, Integer>();
+        features.put("bias", 1);
+        features.put("word:rareIdentifier", 1);
+        for (int i = 0; i < 5000; i++) features.put("position:" + i + ":x", 2);
+        features.put("position:9000:popular", 3);
+        var vocabulary = JavaLanguageModel.promptVocabulary(features);
+        assertEquals(4096, vocabulary.size());
+        assertEquals("bias", vocabulary.getFirst());
+        assertEquals("word:rareIdentifier", vocabulary.get(1));
+        assertEquals("position:9000:popular", vocabulary.get(2));
+    }
+
+    @Test
+    void repeatGuardDistinguishesLongCyclesFromShortOrInterruptedRepeats() {
+        var fragment = List.of(300, 301, 302, 303, 304);
+        var output = new java.util.ArrayList<Integer>();
+        for (int i = 0; i < 7; i++) output.addAll(fragment);
+        assertFalse(JavaLanguageModel.hasRepeatedTail(output));
+        output.addAll(fragment);
+        assertTrue(JavaLanguageModel.hasRepeatedTail(output));
+        output.add(999);
+        assertFalse(JavaLanguageModel.hasRepeatedTail(output));
+    }
+
+    @Test
+    void subwordWeightsKeepTheirMergesAndDecodedSource(@TempDir Path directory) throws IOException {
+        String source = "return \"Ω  Ω\";\n";
+        var first = new JavaLanguageModel.Example("Return a string", source);
+        var second = new JavaLanguageModel.Example("Generate a string", source);
+        var model = JavaLanguageModel.initializeSubwords(List.of(first, second), 16, 42, 0.008, 24);
+        for (int i = 0; i < 320; i++) model.train(first);
+        var result = model.decode(first.prompt(), 64);
+        assertEquals(source, result.generation().body());
+        assertTrue(result.generation().complete());
+        assertEquals(model.tokenCount(source), result.tokens());
+
+        Path path = directory.resolve("subword.bin");
+        model.save(path);
+        var restored = JavaLanguageModel.load(path);
+        assertTrue(restored.sourceMode());
+        assertEquals(result, restored.decode(first.prompt(), 64));
+        assertTrue(restored.tokenCount(source) < JavaTokens.sourceTokens(source).size());
+    }
+
+    @Test
     void sourceModePreservesWhitespaceAndCheckpointFormat(@TempDir Path directory) throws IOException {
         String source = "return \"two  spaces Ω\";\r\n";
         assertEquals(source, String.join("", JavaTokens.sourceTokens(source)));
@@ -35,6 +81,27 @@ class JavaLanguageModelTest {
     @Test
     void recurrentGradientsMatchFiniteDifferences() {
         var model = JavaLanguageModel.initialize(List.of(ADD, SUBTRACT), 3, 42);
+        assertGradients(model);
+    }
+
+    @Test
+    void attentionGradientsMatchFiniteDifferencesAndWeightsRoundTrip(@TempDir Path directory) throws IOException {
+        var model = JavaLanguageModel.initializeSubwords(List.of(ADD, SUBTRACT), 3, 42, 0.008, 12, true);
+        assertGradients(model);
+        var bias = model.parameters().getLast();
+        double initial = bias.value;
+        model.train(ADD);
+        assertNotEquals(initial, bias.value);
+
+        Path checkpoint = directory.resolve("attention.bin");
+        model.save(checkpoint);
+        var restored = JavaLanguageModel.load(checkpoint);
+        assertEquals(model.parameterCount(), restored.parameterCount());
+        assertEquals(model.loss(SUBTRACT, false), restored.loss(SUBTRACT, false));
+        assertEquals(model.decode(ADD.prompt(), 32), restored.decode(ADD.prompt(), 32));
+    }
+
+    private static void assertGradients(JavaLanguageModel model) {
         model.loss(ADD, true);
         for (Scalar parameter : model.parameters()) {
             double original = parameter.value;

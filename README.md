@@ -10,6 +10,16 @@ AMC (Adaptive Memory Compute) — экспериментальная нейро�
 
 Ход работы с внешним корпусом и разбиение Exercism описаны в [плане обучения](research/java-training-plan.md).
 
+Флаг `TrainPrograms --bpe` включает подсловную токенизацию UTF-8 для выходного исходника. Правила слияния сохраняются вместе с весами. Флаг `--stop-on-repeat` у `GenerateProgram` и `JavaProgramBenchmark` досрочно завершает циклическую генерацию и сообщает причину остановки.
+
+Экспериментальный режим `--scaffold` у этих трёх команд работает с корпусом, где рядом с `prompt.txt` есть `Starter.java`. Модель генерирует добавочные импорты, вспомогательные члены и тела методов-заглушек. Сборщик оставляет декларации стартового класса в исходном виде и проверяет синтаксис правок до запуска тестов. Используйте отдельный чекпойнт, обученный с `TrainPrograms --scaffold`.
+
+`TrainPrograms --scaffold --attention` и `TrainPrograms --bpe --attention` добавляют обучаемое внимание к тексту задачи. При генерации каждого токена рекуррентное состояние задаёт веса известных слов и символов из задания. Для запуска используйте обычные команды генерации и бенчмарка с файлом весов этого эксперимента. Каркасному чекпойнту нужен флаг `--scaffold`. [Команды и результаты эксперимента](research/java-training-plan.md#обучаемое-внимание-в-amc).
+
+Режим `--body` обучает генерацию операторов для одного метода-заглушки. AMC сам добавляет внешние скобки, вставляет реализацию в `Starter.java` и проверяет синтаксис. Флаг поддерживается командами обучения, генерации и проверки. [Сравнение форматов и команды запуска](research/java-training-plan.md#обучение-на-телах-методов).
+
+`JavaBodyScaleCorpus` генерирует и проверяет два вложенных синтетических корпуса для `--body`. Скрипт `compare-java-body-scale.ps1` сравнивает обучение на 250 и 1 000 задачах при совпадающем числе обновлений. [Воспроизведение эксперимента](research/java-training-plan.md#масштаб-корпуса-для-тел-методов).
+
 Отдельная модель получает описание и генерирует содержимое `Solution.java` целиком. Токенизация сохраняет пробелы, переносы, кавычки и знаки Java. Латинские идентификаторы можно составлять из отдельных символов. Словарь расширяется символами из обучающего корпуса. Режим использует отдельный формат весов, а прежние файлы моделей методов по-прежнему загружаются.
 
 Корпус находится в `datasets/java-programs`. Каждая задача оформлена каталогом с `prompt.txt` и `Solution.java`. В `test/<id>` также нужен `Verify.java` с проверками в `main`. Тренер читает только `train/`. Бенчмарк проверяет пересечения идентификаторов, описаний и одинаковых исходников с учётом различий в форматировании. Встроенный корпус содержит 16 обучающих классов и восемь отложенных задач по состоянию объектов, интерфейсам, generics, исключениям, Stream API, NIO, records и `CompletableFuture`.
@@ -28,6 +38,38 @@ docker pull eclipse-temurin:21-jdk
 Обучение по умолчанию выполняет 600 эпох и сохраняет лучший по обучающей ошибке чекпойнт в `results/java-programs.bin`. Аргументы тренера — `[корпус] [файл весов] [эпохи] [seed]`. Корпус с тем же форматом можно передать без изменений исходников. Предел текущего режима — один исходник размером до 2047 токенов.
 
 В прогоне на Temurin 27 с seed 42 выбран чекпойнт на 575-й эпохе. Средняя обучающая ошибка на токен снизилась с 4,541630 до 0,012991. Модель точно воспроизвела 16 из 16 обучающих исходников. На восьми отложенных задачах результат — 0 из 8. Семь генераций завершились ошибками компиляции, одна достигла предела длины. Все восемь эталонов отложенной выборки скомпилировались и прошли проверки в Docker. Этот результат измеряет запоминание небольшого корпуса, поэтому режим остаётся исследовательским.
+
+### Генерация через локальную кодовую модель
+
+`scripts/generate-java-local.ps1` работает в PowerShell 7 и обращается к локальному серверу с API `/v1/chat/completions`. Для первого прохода модель получает описание и стартер из `prompt.txt`. Бенчмарк проверяет полученные файлы в тех же контейнерах, что и решения AMC. `--feedback` сохраняет статус и до 4 КиБ диагностики компилятора или тестов. Повторный проход с `-RepairFrom` сохраняет прошедшие решения и делает одну новую попытку на каждое оставшееся задание. [Документация llama.cpp](https://github.com/ggml-org/llama.cpp/blob/master/tools/server/README.md).
+
+Пример для Qwen2.5-Coder 1.5B Instruct Q4_K_M. При первом запуске сервер скачает около 1,12 ГБ весов в локальный кэш. Подготовьте исходный корпус и зависимости JUnit по инструкции к импорту. [Карточка модели](https://huggingface.co/Qwen/Qwen2.5-Coder-1.5B-Instruct-GGUF) · [Подготовка корпуса](research/java-training-plan.md#воспроизведение-первого-импорта).
+
+```powershell
+.\scripts\build.ps1
+.\scripts\import-exercism.ps1 -ExpandedTraining -Destination build/java-exercism-scaffold
+docker pull eclipse-temurin:21-jdk
+$cache = (New-Item -ItemType Directory -Force build/amc-llama-cache).FullName
+docker run -d --rm --name amc-java-model --cap-drop ALL --security-opt no-new-privileges `
+  -e LLAMA_CACHE=/cache --mount "type=bind,source=$cache,target=/cache" -p 127.0.0.1:8091:8080 `
+  ghcr.io/ggml-org/llama.cpp@sha256:c2cf6c72d913b6c89a5f0929f2a866e6161e09e7dc187e0f3b0f21e923e26db3 `
+  --host 0.0.0.0 --port 8080 -hf Qwen/Qwen2.5-Coder-1.5B-Instruct-GGUF:Q4_K_M `
+  --alias amc-qwen-local -t 6 -c 4096 --parallel 1
+```
+
+Когда `Invoke-RestMethod http://127.0.0.1:8091/health -NoProxy` вернёт `status: ok`, запустите генерацию и проверку. Для нового прогона выберите свободные каталоги вывода.
+
+```powershell
+$java = Join-Path $env:JAVA_HOME 'bin/java.exe'
+$corpus = 'build/java-exercism-scaffold'
+$first = 'build/java-local-validation'
+$repaired = 'build/java-local-validation-repair'
+.\scripts\generate-java-local.ps1 -Corpus $corpus -Destination $first -Model amc-qwen-local
+& $java -cp build/classes dev.amc.benchmark.JavaProgramBenchmark --candidates --feedback $corpus $first validation
+.\scripts\generate-java-local.ps1 -Corpus $corpus -Destination $repaired -Model amc-qwen-local -RepairFrom $first
+& $java -cp build/classes dev.amc.benchmark.JavaProgramBenchmark --candidates $corpus $repaired validation
+docker stop amc-java-model
+```
 
 ### Общий прогон
 

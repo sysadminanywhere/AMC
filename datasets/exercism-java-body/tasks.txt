@@ -1,0 +1,13 @@
+collatz-conjecture
+eliuds-eggs
+leap
+micro-blog
+raindrops
+reverse-string
+rna-transcription
+square-root
+two-fer
+isbn-verifier
+isogram
+pangram
+word-count

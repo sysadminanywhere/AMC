@@ -12,6 +12,26 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ProgramCorpusTest {
     @Test
+    void loadsSupportSourcesWithoutAllowingThemToReplaceTheCandidate(@TempDir Path root) throws IOException {
+        Path directory = root.resolve("train/task");
+        write(directory, "Training prompt", "public class Solution {}");
+        Path support = Files.createDirectory(directory.resolve("support"));
+        Files.writeString(support.resolve("Helper.java"), "class Helper {}");
+        assertEquals("class Helper {}", ProgramCorpus.trainingReferences(root).getFirst().support().get("Helper.java"));
+        Files.writeString(support.resolve("Solution.java"), "class Replacement {}");
+        assertThrows(IOException.class, () -> ProgramCorpus.trainingReferences(root));
+    }
+
+    @Test
+    void referenceChecksCanBeLargerThanModelInputFiles(@TempDir Path root) throws IOException {
+        Path directory = root.resolve("train/large-test");
+        write(directory, "Training prompt", "public class Solution {}");
+        String verification = "public class Verify { /*" + "x".repeat(36_000) + "*/ }";
+        Files.writeString(directory.resolve("Verify.java"), verification);
+        assertEquals(verification, ProgramCorpus.trainingReferences(root).getFirst().verification());
+    }
+
+    @Test
     void trainingLoadsOnlyTrainingAndEvaluationRejectsDuplicateSolutions(@TempDir Path root) throws IOException {
         write(root.resolve("train/alpha"), "Training prompt", "public class Solution {}");
         assertEquals("alpha", ProgramCorpus.training(root).getFirst().id());
